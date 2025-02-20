@@ -1,4 +1,3 @@
-
 import requests
 import a2s
 import time
@@ -6,6 +5,8 @@ import time
 WEBHOOK_URL = "https://discord.com/api/webhooks/1342146792921497712/rJVBkbox_QV2b4JaSAGDYtRioci2905SiPhFXgI-2pc-eigODkcTEZ-Jhpt0G0niR1fP"
 SERVER_IP = "62.122.215.43"
 SERVER_PORT = 27047
+
+message_id = None  # Сюда запомним ID первого сообщения
 
 while True:
     try:
@@ -19,6 +20,14 @@ while True:
     except:
         status = "❌ Сервер недоступен!"
 
-    requests.post(WEBHOOK_URL, json={"content": status})
-    time.sleep(60)  # Обновление каждую минуту
+    if message_id is None:
+        # Отправляем первое сообщение
+        response = requests.post(WEBHOOK_URL, json={"content": status})
+        if response.status_code == 200:
+            message_id = response.json().get("id")  # Запоминаем ID сообщения
+    else:
+        # Редактируем уже отправленное сообщение
+        edit_url = f"{WEBHOOK_URL}/messages/{message_id}"
+        requests.patch(edit_url, json={"content": status})
 
+    time.sleep(60)  # Обновление каждую минуту
