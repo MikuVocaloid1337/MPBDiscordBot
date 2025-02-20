@@ -1,14 +1,15 @@
 import requests
 import a2s
 import time
-import os
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/1342146792921497712/rJVBkbox_QV2b4JaSAGDYtRioci2905SiPhFXgI-2pc-eigODkcTEZ-Jhpt0G0niR1fP"
 SERVER_IP = "62.122.215.43"
 SERVER_PORT = 27047
 
-# Загружаем message_id из переменной окружения
-message_id = os.getenv("MESSAGE_ID")
+# Получаем информацию о вебхуке
+webhook_info = requests.get(WEBHOOK_URL).json()
+webhook_name = webhook_info.get("name", "")
+message_id = webhook_name.split(" | ID: ")[-1] if " | ID: " in webhook_name else None
 
 while True:
     try:
@@ -26,18 +27,23 @@ while True:
         # Отправляем первое сообщение
         response = requests.post(WEBHOOK_URL, json={"content": status})
         if response.status_code == 200:
-            message_id = response.json().get("id")  # Запоминаем ID сообщения
-            os.environ["MESSAGE_ID"] = message_id  # Сохраняем в переменную окружения
+            message_id = response.json().get("id")  # Получаем ID сообщения
+
+            # Сохраняем ID в названии вебхука
+            webhook_new_name = f"Server Status | ID: {message_id}"
+            requests.patch(WEBHOOK_URL, json={"name": webhook_new_name})
+
     else:
         # Редактируем уже отправленное сообщение
         edit_url = f"{WEBHOOK_URL}/messages/{message_id}"
         response = requests.patch(edit_url, json={"content": status})
 
-        # Если сообщение было удалено, создаем новое
+        # Если сообщение удалено — создаем новое и обновляем название вебхука
         if response.status_code == 404:
             response = requests.post(WEBHOOK_URL, json={"content": status})
             if response.status_code == 200:
                 message_id = response.json().get("id")
-                os.environ["MESSAGE_ID"] = message_id  # Обновляем переменную
+                webhook_new_name = f"Server Status | ID: {message_id}"
+                requests.patch(WEBHOOK_URL, json={"name": webhook_new_name})
 
     time.sleep(60)  # Обновление каждую минуту
