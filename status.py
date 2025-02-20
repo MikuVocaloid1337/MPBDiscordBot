@@ -1,15 +1,14 @@
 import requests
 import a2s
 import time
+import os
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/1342146792921497712/rJVBkbox_QV2b4JaSAGDYtRioci2905SiPhFXgI-2pc-eigODkcTEZ-Jhpt0G0niR1fP"
 SERVER_IP = "62.122.215.43"
 SERVER_PORT = 27047
 
-# Получаем информацию о вебхуке
-webhook_info = requests.get(WEBHOOK_URL).json()
-webhook_name = webhook_info.get("name", "")
-message_id = webhook_name.split(" | ID: ")[-1] if " | ID: " in webhook_name else None
+# Загружаем message_id из переменной окружения
+message_id = os.getenv("MESSAGE_ID")
 
 while True:
     try:
@@ -27,23 +26,19 @@ while True:
         # Отправляем первое сообщение
         response = requests.post(WEBHOOK_URL, json={"content": status})
         if response.status_code == 200:
-            message_id = response.json().get("id")  # Получаем ID сообщения
-
-            # Сохраняем ID в названии вебхука
-            webhook_new_name = f"Server Status | ID: {message_id}"
-            requests.patch(WEBHOOK_URL, json={"name": webhook_new_name})
-
+            message_id = response.json().get("id")  # Запоминаем ID сообщения
+            os.environ["MESSAGE_ID"] = message_id  # Сохраняем в переменную окружения
     else:
         # Редактируем уже отправленное сообщение
         edit_url = f"{WEBHOOK_URL}/messages/{message_id}"
         response = requests.patch(edit_url, json={"content": status})
 
-        # Если сообщение удалено — создаем новое и обновляем название вебхука
+        # Если сообщение было удалено, создаем новое
         if response.status_code == 404:
             response = requests.post(WEBHOOK_URL, json={"content": status})
             if response.status_code == 200:
-                message_id = response.json().get("id")
-                webhook_new_name = f"Server Status | ID: {message_id}"
-                requests.patch(WEBHOOK_URL, json={"name": webhook_new_name})
+                message_id = 1342183512631152642
+                os.environ["MESSAGE_ID"] = message_id  # Обновляем переменную
 
     time.sleep(60)  # Обновление каждую минуту
+
