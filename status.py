@@ -4,7 +4,7 @@ import time
 import os
 
 WEBHOOK_URL = "https://discord.com/api/webhooks/1342146792921497712/rJVBkbox_QV2b4JaSAGDYtRioci2905SiPhFXgI-2pc-eigODkcTEZ-Jhpt0G0niR1fP"
-SERVER_IP = "62.122.215.43"
+SERVER_IP = "62.122.213.50"
 SERVER_PORT = 27047
 
 # Загружаем message_id из переменной окружения
